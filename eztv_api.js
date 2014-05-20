@@ -92,7 +92,7 @@ exports.getAllEpisodes = function(data, cb) {
 				
 				if(title.indexOf("-CTU") > -1 || title.indexOf("-AC3") > -1 || title.indexOf("-CRX") > -1 || title.indexOf("-IMMERSE") > -1) 
 					return false;
-				else if(title.indexOf("XviD") > -1 || title.indexOf("x264") > -1 || title.indexOf("HDTV") > -1) 
+				else if(title.indexOf("720") > -1) 
 					// accept xvid & x264
 					return true;
 				
