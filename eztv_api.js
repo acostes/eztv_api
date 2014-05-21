@@ -68,8 +68,18 @@ exports.getEpisodeMagnet	=	function(data, cb) {
 
 		if(episode_row.length === 0) return cb("Episode Not Found", null);
 
-		var magnet_link = episode_row.children('td[align="center"]').children('a').first().attr('href');
-		return cb(null, magnet_link);
+        var torrents = episode_row.children('td[align="center"]').children('a');
+        var torrent = null;
+        torrents.each(function() {
+            var link = $(this).first().attr('href');
+            // skip magnet torrent and torrent from zoink
+			if (link.indexOf("magnet") == -1 && link.indexOf("zoink") == -1) {
+                torrent = link
+                return false;
+            }
+        });
+
+		return cb(null, torrent);
 	});
 };
 
@@ -87,15 +97,10 @@ exports.getAllEpisodes = function(data, cb) {
 		    if(episode_rows.length > 0) {
 				var title = $(this).children('td').eq(1).text();
 
-				// we exclude all x264-CTU or AC3 (probably AC3)
-				// CTU, CRX, IMMERSE = team(s) who release in AC3
-				
-				if(title.indexOf("-CTU") > -1 || title.indexOf("-AC3") > -1 || title.indexOf("-CRX") > -1 || title.indexOf("-IMMERSE") > -1) 
-					return false;
-				else if(title.indexOf("720") > -1) 
-					// accept xvid & x264
+				if(title.indexOf("720") > -1) {  
+					// accept only 720p
 					return true;
-				
+                }
 		    }
 		    return false;
         });
@@ -104,14 +109,24 @@ exports.getAllEpisodes = function(data, cb) {
 
         show_rows.each(function() {
             var entry = $(this);
-            var title = entry.children('td').eq(1).text().replace('x264', ''); // temp fix
-            var magnet = entry.children('td').eq(2).children('a').first().attr('href');
+            var title = $(this).children('td').eq(1).text().replace('x264', ''); // temp fix
+            var torrents = entry.children('td').eq(2).children('a');
+            var torrent_link = null;
+            torrents.each(function() {
+                var link = $(this).first().attr('href');
+                // skip magnet torrent and torrent from zoink
+				if (link.indexOf("magnet") == -1 && link.indexOf("zoink") == -1) {
+                    torrent_link = link
+                    return false;
+                }
+            });
+
             var matcher = title.match(/S?0*(\d+)?[xE]0*(\d+)/);
             if(matcher) {
                 var season = parseInt(matcher[1], 10);
                 var episode = parseInt(matcher[2], 10);
                 var torrent = {};
-                torrent.url = magnet;
+                torrent.url = torrent_link;
                 torrent.seeds = 0;
                 torrent.peers = 0;
                 if(!episodes[season]) episodes[season] = {};
@@ -124,7 +139,7 @@ exports.getAllEpisodes = function(data, cb) {
 	                var season = matcher[1]; // Season : 2014
 	                var episode = matcher[2].replace(" ", "/"); //Episode : 04/06
 	                var torrent = {};
-	                torrent.url = magnet;
+	                torrent.url = torrent_link;
 	                torrent.seeds = 0;
 	                torrent.peers = 0;
 	                if(!episodes[season]) episodes[season] = {};
