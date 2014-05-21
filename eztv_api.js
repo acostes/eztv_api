@@ -1,86 +1,86 @@
 /*************************
-**	Modules		**
+**  Modules     **
 **************************/
 
-var request	=	require('request');
-var cheerio	=	require('cheerio');
-var moment	=	require('moment');
+var request =   require('request');
+var cheerio =   require('cheerio');
+var moment  =   require('moment');
 
 /*************************
-**	Variables	**
+**  Variables   **
 **************************/
 
-var BASE_URL	=	"http://eztv.it";
-var SHOWLIST	=	"/showlist/";
-var LATEST	=	"/sort/100/";
-var SEARCH	=	"/search/";
+var BASE_URL    =   "http://eztv.it";
+var SHOWLIST    =   "/showlist/";
+var LATEST  =   "/sort/100/";
+var SEARCH  =   "/search/";
 var SHOWS   =   "/shows/";
 
-exports.getAllShows	=	function(cb) {
-	if(cb == null) return;
-    	request(BASE_URL + SHOWLIST, function(err, res, html){
+exports.getAllShows =   function(cb) {
+    if(cb == null) return;
+        request(BASE_URL + SHOWLIST, function(err, res, html){
 
-		if(err) return (err, null);
+        if(err) return (err, null);
 
-		var $ = cheerio.load(html);
-		var title, show;
-		var allShows = [];
+        var $ = cheerio.load(html);
+        var title, show;
+        var allShows = [];
 
-		$('.thread_link').each(function(){
-			var entry = $(this);
-			var show = entry.text();
+        $('.thread_link').each(function(){
+            var entry = $(this);
+            var show = entry.text();
             var id = entry.attr('href').match(/\/shows\/(.*)\/(.*)\//)[1];
             var slug = entry.attr('href').match(/\/shows\/(.*)\/(.*)\//)[2];
-			allShows.push({show: show, id: id, slug: slug});
-		});
+            allShows.push({show: show, id: id, slug: slug});
+        });
 
-		return cb(null, allShows);
-    	});
+        return cb(null, allShows);
+        });
 }
 
-exports.getEpisodeMagnet	=	function(data, cb) {
-	if(cb == null) return;
-	var show = data.show;
-	var season = data.season;
-	var episode = data.episode;
-	if(season.toString().length==1) season = "0"+season;
+exports.getEpisodeMagnet    =   function(data, cb) {
+    if(cb == null) return;
+    var show = data.show;
+    var season = data.season;
+    var episode = data.episode;
+    if(season.toString().length==1) season = "0"+season;
 
-	if(episode.toString().length==1) episode = "0"+episode;
+    if(episode.toString().length==1) episode = "0"+episode;
 
-	var searchString = show +"+S"+ season + "E" + episode;
+    var searchString = show +"+S"+ season + "E" + episode;
 
-	request.post(BASE_URL + SEARCH, {form: {SearchString1: searchString}}, function (err, res, html) {
-		if(err) return cb(err, null);
+    request.post(BASE_URL + SEARCH, {form: {SearchString1: searchString}}, function (err, res, html) {
+        if(err) return cb(err, null);
 
-		var $ = cheerio.load(html);
+        var $ = cheerio.load(html);
 
-		var show_rows = $('tr.forum_header_border[name="hover"]').filter(function(){
-			var entry = $(this);
-			return entry.find('img[title="Show Description about '+ show+'"]').length > 0;
-		});
-		
-		if(show_rows.length === 0) return cb("Show Not Found", null);
+        var show_rows = $('tr.forum_header_border[name="hover"]').filter(function(){
+            var entry = $(this);
+            return entry.find('img[title="Show Description about '+ show+'"]').length > 0;
+        });
 
-		var episode_row = show_rows.filter(function() {
-			var entry = $(this);
-			return entry.text().indexOf("S"+season+"E"+episode) !== -1;
-		});
+        if(show_rows.length === 0) return cb("Show Not Found", null);
 
-		if(episode_row.length === 0) return cb("Episode Not Found", null);
+        var episode_row = show_rows.filter(function() {
+            var entry = $(this);
+            return entry.text().indexOf("S"+season+"E"+episode) !== -1;
+        });
+
+        if(episode_row.length === 0) return cb("Episode Not Found", null);
 
         var torrents = episode_row.children('td[align="center"]').children('a');
         var torrent = null;
         torrents.each(function() {
             var link = $(this).first().attr('href');
             // skip magnet torrent and torrent from zoink
-			if (link.indexOf("magnet") == -1 && link.indexOf("zoink") == -1) {
+            if (link.indexOf("magnet") == -1 && link.indexOf("zoink") == -1) {
                 torrent = link
                 return false;
             }
         });
 
-		return cb(null, torrent);
-	});
+        return cb(null, torrent);
+    });
 };
 
 exports.getAllEpisodes = function(data, cb) {
@@ -94,15 +94,15 @@ exports.getAllEpisodes = function(data, cb) {
 
         var show_rows = $('tr.forum_header_border[name="hover"]').filter(function() {
             episode_rows = $(this).children('.forum_thread_post');
-		    if(episode_rows.length > 0) {
-				var title = $(this).children('td').eq(1).text();
+            if(episode_rows.length > 0) {
+                var title = $(this).children('td').eq(1).text();
 
-				if(title.indexOf("720") > -1) {  
-					// accept only 720p
-					return true;
+                if(title.indexOf("720") > -1) {
+                    // accept only 720p
+                    return true;
                 }
-		    }
-		    return false;
+            }
+            return false;
         });
 
         if(show_rows.length === 0) return cb("Show Not Found", null);
@@ -115,7 +115,7 @@ exports.getAllEpisodes = function(data, cb) {
             torrents.each(function() {
                 var link = $(this).first().attr('href');
                 // skip magnet torrent and torrent from zoink
-				if (link.indexOf("magnet") == -1 && link.indexOf("zoink") == -1) {
+                if (link.indexOf("magnet") == -1 && link.indexOf("zoink") == -1) {
                     torrent_link = link
                     return false;
                 }
@@ -134,18 +134,18 @@ exports.getAllEpisodes = function(data, cb) {
                 episodes.dateBased = false;
             }
             else {
-            	matcher = title.match(/(\d{4}) (\d{2} \d{2})/); // Date based TV Shows
-            	if(matcher) {
-	                var season = matcher[1]; // Season : 2014
-	                var episode = matcher[2].replace(" ", "/"); //Episode : 04/06
-	                var torrent = {};
-	                torrent.url = torrent_link;
-	                torrent.seeds = 0;
-	                torrent.peers = 0;
-	                if(!episodes[season]) episodes[season] = {};
-	                episodes[season][episode] = torrent;
-	                episodes.dateBased = true;
-	            }
+                matcher = title.match(/(\d{4}) (\d{2} \d{2})/); // Date based TV Shows
+                if(matcher) {
+                    var season = matcher[1]; // Season : 2014
+                    var episode = matcher[2].replace(" ", "/"); //Episode : 04/06
+                    var torrent = {};
+                    torrent.url = torrent_link;
+                    torrent.seeds = 0;
+                    torrent.peers = 0;
+                    if(!episodes[season]) episodes[season] = {};
+                    episodes[season][episode] = torrent;
+                    episodes.dateBased = true;
+                }
             }
         });
         return cb(null, episodes);
