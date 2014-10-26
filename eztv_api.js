@@ -76,22 +76,28 @@ exports.getAllEpisodes = function(data, cb) {
             var title = $(this).children('td').eq(1).text().replace('x264', ''); // temp fix
             var torrents = entry.children('td').eq(2).children('a');
             var torrent_link = null;
+            var torrent_link_magnet = null;
             torrents.each(function() {
                 var link = $(this).first().attr('href');
                 // skip magnet torrent and torrent from zoink
                 if (link.indexOf("magnet") == -1 && link.indexOf("zoink") == -1 && link.indexOf("bt-chat") == -1) {
-                    torrent_link = link
-                    return false;
+                    torrent_link = link;
+                }
+
+                // Keep magnet link
+                if (link.indexOf("magnet") != -1) {
+                    torrent_link_magnet = link;
                 }
             });
 
             var matcher = title.match(/S?0*(\d+)?[xE]0*(\d+)/);
-            var quality = title.match(/(\d{3,4})p/) ? title.match(/(\d{3,4})p/)[0] : "420p";
+            var quality = title.match(/(\d{3,4})p/) ? title.match(/(\d{3,4})p/)[0] : "HDTV";
             if(matcher) {
                 var season = parseInt(matcher[1], 10);
                 var episode = parseInt(matcher[2], 10);
                 var torrent = {};
                 torrent.url = torrent_link;
+                torrent.urlMagnet = torrent_link_magnet;
                 torrent.seeds = 0;
                 torrent.peers = 0;
                 if(!episodes[season]) episodes[season] = {};
@@ -102,12 +108,13 @@ exports.getAllEpisodes = function(data, cb) {
             }
             else {
                 matcher = title.match(/(\d{4}) (\d{2} \d{2})/); // Date based TV Shows
-                var quality = title.match(/(\d{3,4})p/) ? title.match(/(\d{3,4})p/)[0] : "420p";
+                var quality = title.match(/(\d{3,4})p/) ? title.match(/(\d{3,4})p/)[0] : "HDTV";
                 if(matcher) {
                     var season = matcher[1]; // Season : 2014
                     var episode = matcher[2].replace(" ", "/"); //Episode : 04/06
                     var torrent = {};
                     torrent.url = torrent_link;
+                    torrent.urlMagnet = torrent_link_magnet;
                     torrent.seeds = 0;
                     torrent.peers = 0;
                     if(!episodes[season]) episodes[season] = {};
